@@ -2,6 +2,7 @@ const express = require("express");
 const connectDB = require("./db/dbConnect");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
+const serverless = require("serverless-http");
 
 const app = express();
 const PORT = process.env.PORT || 8257;
@@ -28,3 +29,4 @@ app.use("/user", userRoutes);
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+module.exports.handler = serverless(app);
