@@ -8,7 +8,7 @@ router.use("/notes", noteRouter);
 router.use("/app", appRouter);
 
 router.get("/profile", authenticate, (req, res) => {
-  res.json({ message: `Welcome ${req.user.name}` });
+  res.status(200).json(req.user.name);
 });
 
 module.exports = router;

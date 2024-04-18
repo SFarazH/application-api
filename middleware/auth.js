@@ -7,7 +7,6 @@ const authenticate = async (req, res, next) => {
   if (!token) {
     return res.status(401).json({ message: "Authentication required" });
   }
-
   try {
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
     const user = await User.findById(decodedToken.userId);

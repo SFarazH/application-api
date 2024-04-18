@@ -1,6 +1,7 @@
 const express = require("express");
 const { authenticate } = require("../middleware/auth");
 const User = require("../db/User");
+const { v4: uuidv4 } = require("uuid");
 
 const router = express.Router();
 
@@ -8,9 +9,10 @@ router.post("/add", authenticate, async (req, res) => {
   try {
     const { note } = req.body;
     const user = req.user;
-    user.notes.push(note);
+    const noteId = uuidv4();
+    user.notes.push({ noteId: noteId, note: note });
     await user.save();
-    res.status(200).json({ message: "Note added successfully" });
+    res.status(200).json({ message: `Note added with ID : ${noteId}` });
   } catch (error) {
     res
       .status(500)
@@ -22,11 +24,17 @@ router.patch("/rem", authenticate, async (req, res) => {
   try {
     const { noteId } = req.body;
     const user = req.user;
-    if (noteId < 0 || noteId >= user.notes.length) {
-      return res.status(400).json({ message: "Invalid index provided" });
+    if (!noteId || noteId.trim() === "") {
+      return res.status(400).json({ message: "Invalid Id provided" });
     }
-    user.notes.splice(noteId, 1);
-    await user.save();
+    const result = await User.updateOne(
+      // { _id: req.user._id },
+      { $pull: { notes: { noteId } } }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: "Note not found" });
+    }
     res.status(200).json({ message: "Note removed successfully" });
   } catch (error) {
     res
