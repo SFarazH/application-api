@@ -8,6 +8,9 @@ const router = express.Router();
 router.post("/add", authenticate, async (req, res) => {
   try {
     const { note } = req.body;
+    if (!note) {
+        return res.status(400).json({ message: "Incomplete data sent" });
+      }
     const user = req.user;
     const noteId = uuidv4();
     user.notes.push({ noteId: noteId, note: note });
