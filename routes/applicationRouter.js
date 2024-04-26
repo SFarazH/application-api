@@ -52,15 +52,16 @@ router.patch("/rem", authenticate, async (req, res) => {
     if (!appId || appId.trim() === "") {
       return res.status(400).json({ message: "Invalid Id provided" });
     }
+
     const result = await User.updateOne(
-      //   { _id: user._id },
+      { _id: user._id },
       { $pull: { applications: { appId } } }
     );
-    // console.log(result);
     if (result.modifiedCount === 0) {
       return res.status(404).json({ message: "Application not found" });
     }
 
+    await user.save();
     res.status(200).json({ message: "Application removed successfully" });
   } catch (error) {
     res

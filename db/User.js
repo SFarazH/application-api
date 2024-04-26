@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema({
   },
   applications: [],
   notes: [],
+  resume: [],
 });
 
 userSchema.methods.comparePassword = async function (password) {
