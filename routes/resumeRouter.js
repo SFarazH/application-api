@@ -14,22 +14,21 @@ router.post("/add", authenticate, upload.single("pdf"), async (req, res) => {
   if (!req.file) {
     return res.status(400).send("No file uploaded.");
   }
-  const resumeId = uuidv4();
-  const user = req.user
+  const user = req.user;
+  console.log(user.resumes);
   try {
     const newResume = new Resume({
-      userId : user._id,
+      userId: user._id,
       fileName: req.file.originalname,
       data: req.file.buffer,
       contentType: req.file.mimetype,
-      role: req.body.role,
     });
 
-    
-    
     await newResume.save();
+    user.resumes.push(newResume._id);
+    await user.save();
 
-    res.status(200).send(`Resume uploaded for ${req.body.role} role.`);
+    res.status(200).send(`Resume uploaded for role.`);
   } catch (err) {
     console.log("Error uploading file:", err);
     res.status(500).send("Error uploading file.");
@@ -49,59 +48,28 @@ router.get("/g", async (req, res) => {
   }
 });
 
-router.get("/get", authenticate, async (req, res) => {
-  try {
-    const user = req.user;
-    const resume = user.resume;
-    const roles = resume.map((resu) => resu.role);
 
-    res.status(200).json({ resume });
-  } catch (err) {
-    console.error("Error retrieving file:", err);
-    res.status(500).send("Error retrieving file.");
+router.get('/resumes', authenticate, async(req, res) => {
+  
+  const user = req.user;
+  const userId = user._id;
+  const resumeId = req.body.rId;
+
+  const query = {
+    userId: userId,
+    _id: resumeId
+  };
+
+  // Logic to find the resume with the given userId and _id
+  const matchedResume = await Resume.findOne(query);
+
+  if (matchedResume) {
+    res.setHeader("Content-Type", matchedResume.contentType);
+    res.send(matchedResume.data);
+  } else {
+    res.status(404).json({ message: 'Resume not found' });
   }
 });
 
-router.get("/view", authenticate, async (req, res) => {
-  const { resumeId } = req.body;
-
-  try {
-    const user = req.user;
-    if (!user) {
-      return res.status(404).send("Resume not found");
-    }
-
-    const resume = user.resume.find((r) => r.resumeId === resumeId);
-    if (!resume) {
-      return res.status(404).send("Resume not found");
-    }
-
-    console.log(typeof resume.data);
-    res.json(resume);
-  } catch (err) {
-    console.log("Error retrieving file:", err);
-    res.status(500).send("Error retrieving file.");
-  }
-});
-
-router.get("/getResume", authenticate, async (req, res) => {
-  try {
-    const user = req.user;
-    const resumeId = req.body.resumeId;
-    const resume = user.resume;
-    const result = resume.filter((resu) => resu.resumeId === resumeId);
-
-    res.setHeader("Content-Type", result[0].contentType);
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${result[0].fileName}"`
-    );
-    res.send(result[0].data);
-  } catch (error) {
-    console.log(error);
-
-    res.status(500).json({ error: "Error" });
-  }
-});
 
 module.exports = router;

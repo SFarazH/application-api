@@ -4,7 +4,6 @@ const resumeSchema = new mongoose.Schema({
   name: String,
   data: Buffer,
   contentType: String,
-  role: String,
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
