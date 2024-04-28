@@ -12,7 +12,14 @@ router.post("/add", authenticate, upload.single("pdf"), async (req, res) => {
   if (!req.file) {
     return res.status(400).send("No file uploaded.");
   }
+
+  if (!req.body.role) {
+    return res.status(400).send("No role mentioned.");
+  }
+
   const user = req.user;
+  const role = req.body.role;
+
   try {
     const newResume = new Resume({
       userId: user._id,
@@ -22,22 +29,22 @@ router.post("/add", authenticate, upload.single("pdf"), async (req, res) => {
     });
 
     await newResume.save();
-    user.resumes.push(newResume._id);
+    user.resumes.push({ rId: newResume._id, role: role });
     await user.save();
 
-    res.status(200).send(`Resume uploaded for role.`);
+    res.status(200).send(`Resume uploaded for ${role} role.`);
   } catch (err) {
     console.log("Error uploading file:", err);
     res.status(500).send("Error uploading file.");
   }
 });
 
-router.get("/g", async (req, res) => {
+router.get("/g", authenticate, async (req, res) => {
   try {
-    const rId = req.body.rId;
-    const resume = await Resume.findById(rId);
-    res.setHeader("Content-Type", resume.contentType);
-    // res.send(resume.data);
+    const user = req.user;
+    const resumeArr = user.resumes;
+    console.log(resumeArr);
+    res.send(resumeArr);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error });
