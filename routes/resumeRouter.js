@@ -2,9 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const Resume = require("../db/Resume");
 const { authenticate } = require("../middleware/auth");
-const { v4: uuidv4 } = require("uuid");
-const fs = require("fs");
-const path = require("path");
+const mongoose = require("mongoose");
 const router = express.Router();
 
 const storage = multer.memoryStorage();
@@ -15,7 +13,6 @@ router.post("/add", authenticate, upload.single("pdf"), async (req, res) => {
     return res.status(400).send("No file uploaded.");
   }
   const user = req.user;
-  console.log(user.resumes);
   try {
     const newResume = new Resume({
       userId: user._id,
@@ -40,36 +37,40 @@ router.get("/g", async (req, res) => {
     const rId = req.body.rId;
     const resume = await Resume.findById(rId);
     res.setHeader("Content-Type", resume.contentType);
-    res.send(resume.data);
-    console.log(resume);
+    // res.send(resume.data);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error });
   }
 });
 
-
-router.get('/resumes', authenticate, async(req, res) => {
-  
+router.get("/resumes", authenticate, async (req, res) => {
   const user = req.user;
   const userId = user._id;
   const resumeId = req.body.rId;
 
-  const query = {
-    userId: userId,
-    _id: resumeId
-  };
+  try {
+    const query = {
+      userId: userId,
+      _id: resumeId,
+    };
 
-  // Logic to find the resume with the given userId and _id
-  const matchedResume = await Resume.findOne(query);
+    if (!mongoose.Types.ObjectId.isValid(resumeId)) {
+      return res.status(404).json({ error: "Invalid Resume ID" });
+    }
 
-  if (matchedResume) {
+    const matchedResume = await Resume.findOne(query);
+
+    if (!matchedResume) {
+      return res.status(404).json({ message: "Resume not found" });
+    }
+
     res.setHeader("Content-Type", matchedResume.contentType);
     res.send(matchedResume.data);
-  } else {
-    res.status(404).json({ message: 'Resume not found' });
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json("Internal Server Error");
   }
 });
-
 
 module.exports = router;
