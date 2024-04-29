@@ -88,7 +88,7 @@ router.patch("/status", authenticate, async (req, res) => {
       return res.status(404).json({ message: "Application not found" });
     }
 
-    console.log(result);
+    // console.log(result);
     await user.save();
 
     res

@@ -40,7 +40,7 @@ router.post("/add", authenticate, upload.single("pdf"), async (req, res) => {
 
     res.status(200).send(`Resume uploaded for ${role} role.`);
   } catch (err) {
-    console.log("Error uploading file:", err);
+    // console.log("Error uploading file:", err);
     res.status(500).send("Error uploading file.");
   }
 });
@@ -49,7 +49,7 @@ router.get("/all", authenticate, async (req, res) => {
   try {
     const user = req.user;
     const resumeArr = user.resumes;
-    console.log(resumeArr);
+    // console.log(resumeArr);
     res.send(resumeArr);
   } catch (error) {
     console.error(error);
