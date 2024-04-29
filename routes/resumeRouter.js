@@ -1,10 +1,11 @@
 const express = require("express");
 const multer = require("multer");
 const Resume = require("../db/Resume");
+const User = require("../db/User");
 const { authenticate } = require("../middleware/auth");
 const mongoose = require("mongoose");
 const router = express.Router();
-
+const { v4: uuidv4 } = require("uuid");
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -19,6 +20,7 @@ router.post("/add", authenticate, upload.single("pdf"), async (req, res) => {
 
   const user = req.user;
   const role = req.body.role;
+  const app_rId = uuidv4();
 
   try {
     const newResume = new Resume({
@@ -29,7 +31,11 @@ router.post("/add", authenticate, upload.single("pdf"), async (req, res) => {
     });
 
     await newResume.save();
-    user.resumes.push({ rId: newResume._id, role: role });
+    user.resumes.push({
+      rId: String(newResume._id),
+      role: role,
+      app_rId: app_rId,
+    });
     await user.save();
 
     res.status(200).send(`Resume uploaded for ${role} role.`);
@@ -39,7 +45,7 @@ router.post("/add", authenticate, upload.single("pdf"), async (req, res) => {
   }
 });
 
-router.get("/g", authenticate, async (req, res) => {
+router.get("/all", authenticate, async (req, res) => {
   try {
     const user = req.user;
     const resumeArr = user.resumes;
@@ -54,7 +60,7 @@ router.get("/g", authenticate, async (req, res) => {
 router.get("/resumes", authenticate, async (req, res) => {
   const user = req.user;
   const userId = user._id;
-  const resumeId = req.body.rId;
+  const resumeId = req.query.rId;
 
   try {
     const query = {
@@ -77,6 +83,42 @@ router.get("/resumes", authenticate, async (req, res) => {
   } catch (error) {
     console.error("error", error);
     res.status(500).json("Internal Server Error");
+  }
+});
+
+router.patch("/rem", authenticate, async (req, res) => {
+  try {
+    const { app_rId, rId } = req.body;
+    const user = req.user;
+    if (
+      !app_rId ||
+      app_rId.trim() === "" ||
+      !rId ||
+      rId.trim() === "" ||
+      !mongoose.Types.ObjectId.isValid(rId)
+    ) {
+      return res.status(400).json({ message: "Invalid id provided" });
+    }
+    const result = await User.updateOne(
+      { _id: user._id },
+      { $pull: { resumes: { app_rId: app_rId } } }
+    );
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    const delResume = await Resume.findByIdAndDelete(rId);
+    if (!delResume) {
+      return res.status(404).json({ message: "Resume not found" });
+    }
+
+    await user.save();
+
+    res.status(200).json({ message: "Application removed successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Failed to remove application", error: error.message });
   }
 });
 
