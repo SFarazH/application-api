@@ -77,9 +77,19 @@ router.get("/resumes", authenticate, async (req, res) => {
     if (!matchedResume) {
       return res.status(404).json({ message: "Resume not found" });
     }
+    // const base64Data = matchedResume.data.toString("base64");
 
+    // Set the appropriate headers
     res.setHeader("Content-Type", matchedResume.contentType);
-    res.send(matchedResume.data);
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${matchedResume.name}"`
+    );
+    // res.status(200).send(matchedResume.data);
+    res.status(200).send(matchedResume.data);
+    // console.log(base64Data)
+    // res.setHeader("Content-Type", matchedResume.contentType);
+    // res.send(matchedResume.data);
   } catch (error) {
     console.error("error", error);
     res.status(500).json("Internal Server Error");

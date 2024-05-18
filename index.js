@@ -30,6 +30,7 @@ app.use("/user", userRoutes);
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-module.exports.handler = serverless(app);
+
+// module.exports.handler = serverless(app);
 
 //https://e5z5x2yptp4auqanzhsyyxrqpu0qdfcy.lambda-url.ap-south-1.on.aws/
